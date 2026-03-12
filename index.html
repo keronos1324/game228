@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Тест: Алканы, Алкены, Алкины</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { 
+            max-width: 600px; 
+            margin: 50px auto; 
+            padding: 20px;
+            background: #f0f4f8;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2c3e50; text-align: center; }
+        .timer {
+            text-align: center;
+            font-size: 24px;
+            color: #e74c3c;
+            margin-bottom: 20px;
+        }
+        .question {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .question-text {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .option {
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .option:hover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+        .option.selected {
+            background: #2196f3;
+            color: white;
+            border-color: #2196f3;
+        }
+        .option.correct {
+            background: #4caf50;
+            color: white;
+            border-color: #4caf50;
+        }
+        .option.wrong {
+            background: #f44336;
+            color: white;
+            border-color: #f44336;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            background: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover { background: #1976d2; }
+        .result {
+            text-align: center;
+            font-size: 20px;
+            margin-top: 20px;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Тест: Алканы, Алкены, Алкины</h1>
+        <div class="timer" id="timer">⏱️ 03:00</div>
+        
+        <div id="quiz">
+            <!-- Вопросы будут здесь -->
+        </div>
+        
+        <button id="submitBtn" onclick="checkAnswers()">Проверить</button>
+        
+        <div id="result" class="result hidden"></div>
+        <button id="restartBtn" class="hidden" onclick="location.reload()">Пройти ещё раз</button>
+    </div>
+
+    <script>
+        // База вопросов
+        const questions = [
+            // Тип: формула → название
+            {
+                type: 'formula',
+                question: 'C₂H₆',
+                options: ['этан', 'этен', 'этин', 'метан'],
+                correct: 0
+            },
+            {
+                type: 'formula',
+                question: 'C₃H₆',
+                options: ['пропан', 'пропен', 'пропин', 'бутен'],
+                correct: 1
+            },
+            {
+                type: 'formula',
+                question: 'C₄H₆',
+                options: ['бутан', 'бутен-1', 'бутин-1', 'бутен-2'],
+                correct: 2
+            },
+            {
+                type: 'formula',
+                question: 'C₂H₄',
+                options: ['этан', 'этен', 'этин', 'метен'],
+                correct: 1
+            },
+            {
+                type: 'formula',
+                question: 'CH₄',
+                options: ['метан', 'метен', 'метин', 'этан'],
+                correct: 0
+            },
+            // Тип: название → формула
+            {
+                type: 'name',
+                question: 'Пропин',
+                options: ['C₃H₈', 'C₃H₆', 'C₃H₄', 'C₄H₆'],
+                correct: 2
+            },
+            {
+                type: 'name',
+                question: 'Бутен-2',
+                options: ['C₄H₁₀', 'C₄H₈', 'C₄H₆', 'C₃H₆'],
+                correct: 1
+            },
+            {
+                type: 'name',
+                question: 'Пентан',
+                options: ['C₅H₁₂', 'C₅H₁₀', 'C₅H₈', 'C₄H₁₀'],
+                correct: 0
+            },
+            {
+                type: 'name',
+                question: 'Этин',
+                options: ['C₂H₆', 'C₂H₄', 'C₂H₂', 'C₃H₄'],
+                correct: 2
+            },
+            {
+                type: 'name',
+                question: 'Гексен-1',
+                options: ['C₆H₁₄', 'C₆H₁₂', 'C₆H₁₀', 'C₅H₁₀'],
+                correct: 1
+            }
+        ];
+
+        let userAnswers = new Array(questions.length).fill(null);
+        let timeLeft = 180; // 3 минуты
+        let timerInterval;
+
+        // Перемешать вопросы
+        questions.sort(() => Math.random() - 0.5);
+
+        function renderQuiz() {
+            const quizDiv = document.getElementById('quiz');
+            quizDiv.innerHTML = questions.map((q, i) => `
+                <div class="question">
+                    <div class="question-text">
+                        ${q.type === 'formula' 
+                            ? `Формула <strong>${q.question}</strong> соответствует:` 
+                            : `Вещество <strong>${q.question}</strong> имеет формулу:`}
+                    </div>
+                    <div class="options">
+                        ${q.options.map((opt, j) => `
+                            <div class="option" onclick="selectOption(${i}, ${j})" id="q${i}-opt${j}">
+                                ${String.fromCharCode(65 + j)}) ${opt}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectOption(qIndex, optIndex) {
+            userAnswers[qIndex] = optIndex;
+            // Убрать выделение со всех опций этого вопроса
+            document.querySelectorAll(`[id^="q${qIndex}-opt"]`).forEach(el => {
+                el.classList.remove('selected');
+            });
+            // Выделить выбранную
+            document.getElementById(`q${qIndex}-opt${optIndex}`).classList.add('selected');
+        }
+
+        function updateTimer() {
+            const mins = Math.floor(timeLeft / 60);
+            const secs = timeLeft % 60;
+            document.getElementById('timer').textContent = 
+                `⏱️ ${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                checkAnswers(true);
+            }
+            timeLeft--;
+        }
+
+        function checkAnswers(timeUp = false) {
+            clearInterval(timerInterval);
+            
+            let correct = 0;
+            questions.forEach((q, i) => {
+                const selected = userAnswers[i];
+                const options = document.querySelectorAll(`[id^="q${i}-opt"]`);
+                
+                options.forEach((opt, j) => {
+                    opt.onclick = null; // отключить клики
+                    if (j === q.correct) {
+                        opt.classList.add('correct');
+                    } else if (j === selected && selected !== q.correct) {
+                        opt.classList.add('wrong');
+                    }
+                });
+                
+                if (selected === q.correct) correct++;
+            });
+
+            const resultDiv = document.getElementById('result');
+            const percent = Math.round(correct / questions.length * 100);
+            let grade = percent >= 90 ? 'Отлично! 🎉' : 
+                       percent >= 70 ? 'Хорошо! 👍' : 
+                       percent >= 50 ? 'Удовлетворительно' : 'Нужно подучить 📚';
+            
+            resultDiv.innerHTML = `
+                ${timeUp ? '<p>⏰ Время вышло!</p>' : ''}
+                <p>Правильно: <strong>${correct}/${questions.length}</strong> (${percent}%)</p>
+                <p>${grade}</p>
+            `;
+            resultDiv.classList.remove('hidden');
+            
+            document.getElementById('submitBtn').classList.add('hidden');
+            document.getElementById('restartBtn').classList.remove('hidden');
+        }
+
+        // Запуск
+        renderQuiz();
+        timerInterval = setInterval(updateTimer, 1000);
+    </script>
+</body>
+</html>
